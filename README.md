@@ -4,4 +4,4 @@ Vibe-coded browser mini-game that reveals a Sinterklaas poem as you collect tool
 
 ## Model used: 
 
-GPT-5.1-Codex-Max (Thinking level extra high to start, moved to medium for incremental small fixes)
+GPT-5.1-Codex-Max (thinking level extra high to start, moved to medium for incremental small fixes)
