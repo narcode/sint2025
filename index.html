@@ -1,0 +1,742 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Werkplaats Run: Luuk's Sint Quest</title>
+  <style>
+    :root {
+      color-scheme: light;
+      --ink: #0d1b2a;
+      --paper: #f5f2ed;
+      --accent: #f9b233;
+      --accent-2: #4fb3ff;
+      --accent-3: #74c69d;
+    }
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      font-family: "Avenir Next", "Segoe UI", "Helvetica Neue", Arial, sans-serif;
+      background: radial-gradient(circle at 20% 20%, rgba(79,179,255,0.15), transparent 30%),
+                  radial-gradient(circle at 80% 0%, rgba(249,178,51,0.15), transparent 28%),
+                  linear-gradient(180deg, #fdfcf9 0%, #f3efe8 100%);
+      color: var(--ink);
+      display: flex;
+      justify-content: center;
+      padding: 20px;
+    }
+    .shell {
+      width: min(1100px, 100%);
+      background: #ffffffd9;
+      box-shadow: 0 12px 40px rgba(0,0,0,0.08);
+      border-radius: 18px;
+      overflow: hidden;
+      border: 1px solid #e6dfd3;
+    }
+    header {
+      padding: 16px 20px 12px;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      border-bottom: 1px solid #efe7dd;
+      background: linear-gradient(90deg, rgba(249,178,51,0.1), rgba(79,179,255,0.08));
+    }
+    header h1 {
+      margin: 0;
+      font-size: 20px;
+      letter-spacing: 0.5px;
+    }
+    header .pill {
+      background: #0d1b2a;
+      color: #fff;
+      padding: 6px 10px;
+      border-radius: 10px;
+      font-size: 12px;
+      letter-spacing: 0.4px;
+    }
+    #game-wrap {
+      position: relative;
+      background: linear-gradient(180deg, #eef3f8 0%, #e5edf4 80%, #dde6ee 100%);
+      border-bottom: 1px solid #e6dfd3;
+    }
+    canvas {
+      width: 100%;
+      height: 360px;
+      display: block;
+    }
+    .hud {
+      position: absolute;
+      top: 10px;
+      left: 10px;
+      display: flex;
+      gap: 8px;
+      font-size: 12px;
+      font-weight: 700;
+      color: #0d1b2a;
+      background: rgba(255,255,255,0.85);
+      padding: 8px 10px;
+      border-radius: 10px;
+      border: 1px solid rgba(13,27,42,0.1);
+    }
+    .hud span { opacity: 0.85; }
+    .controls {
+      position: relative;
+      display: grid;
+      grid-template-columns: 50px 50px 50px;
+      grid-template-rows: 50px 50px;
+      gap: 6px;
+      user-select: none;
+    }
+    .controls button {
+      background: linear-gradient(180deg, #ffffffcc, #f2efe7);
+      border: 1px solid #d5cec0;
+      border-radius: 12px;
+      font-size: 20px;
+      color: #0d1b2a;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.08);
+      cursor: pointer;
+      transition: transform 0.08s ease, box-shadow 0.08s ease;
+    }
+    .controls button.down {
+      transform: translateY(2px);
+      box-shadow: 0 3px 8px rgba(0,0,0,0.12) inset;
+    }
+    .controls button:focus-visible { outline: 2px solid var(--accent); }
+    .controls .spacer { visibility: hidden; }
+    .controls-wrap {
+      display: flex;
+      justify-content: center;
+      padding: 10px 12px 2px;
+    }
+    .content {
+      padding: 18px 20px 24px;
+      display: grid;
+      grid-template-columns: 1fr;
+      gap: 16px;
+    }
+    .panel {
+      background: #f8f5f0;
+      border: 1px solid #efe7dd;
+      border-radius: 14px;
+      padding: 12px 14px;
+      box-shadow: inset 0 1px 0 rgba(255,255,255,0.9);
+    }
+    .panel h2 {
+      margin: 4px 0 10px;
+      font-size: 16px;
+      letter-spacing: 0.3px;
+    }
+    .poem {
+      display: grid;
+      gap: 10px;
+    }
+    .stanza {
+      background: #fff;
+      border: 1px solid #e6dfd3;
+      border-radius: 12px;
+      padding: 12px 12px 10px;
+      position: relative;
+      overflow: hidden;
+      min-height: 70px;
+    }
+    .stanza.locked { filter: blur(1.6px); opacity: 0.45; }
+    .stanza.locked::before {
+      content: "Locked — verzamel gereedschap";
+      position: absolute;
+      inset: 0;
+      display: grid;
+      place-items: center;
+      color: #0d1b2a;
+      font-weight: 800;
+      background: rgba(255,255,255,0.7);
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+    }
+    .stanza h3 {
+      margin: 0 0 6px;
+      font-size: 14px;
+      color: #0d1b2a;
+      letter-spacing: 0.2px;
+    }
+    .stanza p {
+      margin: 0;
+      line-height: 1.55;
+      font-size: 14px;
+      color: #1f2b3a;
+    }
+    .tip {
+      font-size: 12px;
+      color: #415063;
+      margin: 6px 0 0;
+    }
+  </style>
+  <style>
+    .overlay {
+      position: fixed;
+      inset: 0;
+      background: rgba(13,27,42,0.82);
+      color: #fff;
+      display: none;
+      align-items: center;
+      justify-content: center;
+      padding: 40px 24px;
+      z-index: 20;
+      text-align: center;
+    }
+    .overlay.show { display: flex; }
+    .overlay .inner {
+      max-width: 900px;
+      background: black;
+      border: 1px solid rgba(255,255,255,0.2);
+      border-radius: 18px;
+      padding: 24px 20px 22px;
+      box-shadow: 0 18px 50px rgba(0,0,0,0.35);
+    }
+    .overlay h2 {
+      margin: 0 0 14px;
+      font-size: clamp(24px, 6vw, 38px);
+      letter-spacing: 0.8px;
+    }
+    .overlay p {
+      margin: 0;
+      font-size: clamp(18px, 4vw, 28px);
+      line-height: 1.5;
+      white-space: pre-line;
+    }
+    .overlay .tip {
+      margin-top: 14px;
+      font-size: 13px;
+      opacity: 0.8;
+    }
+    .overlay button {
+      margin-top: 16px;
+      padding: 10px 18px;
+      font-size: 15px;
+      border-radius: 12px;
+      border: 1px solid rgba(255,255,255,0.7);
+      background: linear-gradient(180deg, #ffffff, #f2f2f2);
+      color: #0d1b2a;
+      font-weight: 700;
+      cursor: pointer;
+      box-shadow: 0 6px 14px rgba(0,0,0,0.16);
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header>
+      <div class="pill">Sint's Werkplaats</div>
+      <h1>Race door de klusjes, ontgrendel het gedicht</h1>
+    </header>
+    <div id="game-wrap">
+      <canvas id="game" width="1100" height="380"></canvas>
+      <div class="hud"><span id="status">Pak de boor met pijltoetsen of de knoppen!</span></div>
+    </div>
+    <div class="controls-wrap">
+      <div class="controls" aria-label="Richtingsknoppen">
+        <span class="spacer"></span>
+        <button type="button" data-dir="up">↑</button>
+        <span class="spacer"></span>
+        <button type="button" data-dir="left">←</button>
+        <button type="button" data-dir="down">↓</button>
+        <button type="button" data-dir="right">→</button>
+      </div>
+    </div>
+    <div class="overlay" id="overlay">
+      <div class="inner">
+        <h2 id="overlay-title"></h2>
+        <p id="overlay-text"></p>
+        <button type="button" id="overlay-continue">Verder</button>
+      </div>
+    </div>
+    <div class="content">
+      <div class="panel" id="gedicht">
+        <h2>Gedicht</h2>
+        <div class="poem" id="poem"></div>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const stanzaData = [
+      {
+        name: 'boor',
+        letter: 'B',
+        glyph: '🛠️',
+        color: '#f9b233',
+        lines: [
+          'Lieve Luuk, jonge Amsterdamse creatief-entrepreneur,',
+          'Sint hoorde geruchten van nieuw leven, een wondertje zo puur.',
+          'Een baby op komst, een huis vol dromen,',
+          'Maar eerst moet die kamer netjes uit de steigers komen.'
+        ]
+      },
+      {
+        name: 'schroeven',
+        letter: 'S',
+        glyph: '🪛',
+        color: '#4fb3ff',
+        lines: [
+          'Geen youtube tutorials, maar echt boren in de muur,',
+          'Met bits en boortjes, pluggen klaar, en schroeven op het uur.',
+          'Een set inbussleutels, ratel, waterpas erbij,',
+          'Zo bouw je jouw babykamer: veilig, strak en blij.'
+        ]
+      },
+      {
+        name: 'planken',
+        letter: 'P',
+        glyph: '🪚',
+        color: '#74c69d',
+        lines: [
+          'Er liggen planken, latten, verf en kit in de gang,',
+          'Je denkt: “Help, Mijn Man Is Klusser!” — het voelt soms wat lang.',
+          'Toch blijf je kalm: meten is weten, recht is recht,',
+          'En elke wiebelplank wordt door jou weer netjes strak aangelegd.'
+        ]
+      },
+      {
+        name: 'toolbox',
+        letter: 'C',
+        glyph: '🧰',
+        color: '#e35b5d',
+        lines: [
+          'De commode staat, de kast hangt vast, de wieg schommelt zacht,',
+          'Je draait de laatste schroef en denkt: dit had ik niet verwacht.',
+          'Tussen stof en zaagsel voel je \'t ineens van top tot teen:',
+          '“Ik word een echte papa! Krijg ik dan straks ook zo\'n buik meteen?”'
+        ]
+      },
+      {
+        name: 'gewichten',
+        letter: 'F',
+        glyph: '🏋️',
+        color: '#ad8bff',
+        lines: [
+          'Sint fluistert nog één tip, zet de gereedschappen neer:',
+          'Blijf thuis ook sporten, tillen en squatten keer op keer.',
+          'Een papa zonder spierballen, dat telt natuurlijk niet,',
+          'Dus push-ups na het klussen, dat is het gouden lied.'
+        ]
+      },
+      {
+        name: 'finish',
+        letter: '✓',
+        glyph: '🏁',
+        color: '#0cbc87',
+        lines: [
+          'Luuk, jouw kleine krijgt straks een kamer om te dromen,',
+          'Pak die boor, die schroevendraaier, die inbussleutels — laat ze maar komen.',
+          'Sint is trots op jou: de klus is klaar, wat een prestatie man!',
+          'Maar Luuk, vergeet je push-ups niet! hou dat spierpeil aan!'
+        ]
+      }
+    ];
+
+    const poemEl = document.getElementById('poem');
+    const statusEl = document.getElementById('status');
+    const canvas = document.getElementById('game');
+    const ctx = canvas.getContext('2d');
+    const overlayEl = document.getElementById('overlay');
+    const overlayTitle = document.getElementById('overlay-title');
+    const overlayText = document.getElementById('overlay-text');
+    let overlayActive = false;
+    let viewWidth = canvas.clientWidth;
+    let viewHeight = canvas.clientHeight;
+    const controlButtons = document.querySelectorAll('.controls [data-dir]');
+
+    const stanzaNodes = [];
+    stanzaData.forEach((stanza, idx) => {
+      const st = document.createElement('div');
+      st.className = 'stanza locked';
+      const h = document.createElement('h3');
+      h.textContent = "";
+      const p = document.createElement('p');
+      p.innerHTML = stanza.lines.join('<br>');
+      st.appendChild(h);
+      st.appendChild(p);
+      poemEl.appendChild(st);
+      stanzaNodes.push(st);
+    });
+
+    let currentLevel = 0;
+
+    const player = { x: 0, y: 0, vx: 0, vy: 0, size: 15, speed: 1.2 };
+
+    const trail = [];
+    const sawdust = Array.from({ length: 30 }, () => ({
+      x: Math.random() * viewWidth,
+      y: Math.random() * viewHeight,
+      r: Math.random() * 2 + 1,
+      drift: Math.random() * 0.4 + 0.1,
+      phase: Math.random() * Math.PI * 2
+    }));
+
+    const keys = new Set();
+
+    document.addEventListener('keydown', e => {
+      if (['ArrowUp','ArrowDown','ArrowLeft','ArrowRight',' '].includes(e.key)) e.preventDefault();
+      if (overlayActive) return;
+      keys.add(e.key);
+    });
+    document.addEventListener('keyup', e => keys.delete(e.key));
+
+    const dirKey = { up: 'ArrowUp', down: 'ArrowDown', left: 'ArrowLeft', right: 'ArrowRight' };
+    controlButtons.forEach(btn => {
+      const dir = btn.dataset.dir;
+      const key = dirKey[dir];
+      if (!key) return;
+      const press = (active) => {
+        if (overlayActive) return;
+        btn.classList.toggle('down', active);
+        if (active) keys.add(key); else keys.delete(key);
+      };
+      const start = (e) => { e.preventDefault(); press(true); };
+      const end = (e) => { if (e) e.preventDefault(); press(false); };
+      btn.addEventListener('mousedown', start);
+      btn.addEventListener('touchstart', start, { passive: false });
+      window.addEventListener('mouseup', end);
+      window.addEventListener('touchend', end);
+      btn.addEventListener('mouseleave', () => press(false));
+    });
+
+
+    let activeTool = spawnTool();
+
+    function spawnTool() {
+      const margin = 60;
+      const prev = activeTool;
+      let tool;
+      const tries = 25;
+      for (let i = 0; i < tries; i++) {
+        const x = Math.random() * (viewWidth - margin * 2) + margin;
+        const y = Math.random() * (viewHeight - margin * 2) + margin;
+        const closePrev = prev && Math.hypot(prev.x - x, prev.y - y) < 180;
+        const closePlayer = Math.hypot(player.x - x, player.y - y) < 140;
+        if (closePrev || closePlayer) continue;
+        tool = { x, y, pulse: 0, color: stanzaData[currentLevel].color };
+        break;
+      }
+      if (!tool) {
+        tool = {
+          x: Math.random() * (viewWidth - margin * 2) + margin,
+          y: Math.random() * (viewHeight - margin * 2) + margin,
+          pulse: 0,
+          color: stanzaData[currentLevel].color
+        };
+      }
+      return tool;
+    }
+
+    function unlockLevel() {
+      const stanza = stanzaNodes[currentLevel];
+      if (!stanza || !stanza.classList.contains('locked')) return;
+      stanza.classList.remove('locked');
+      const lastLevel = currentLevel === stanzaData.length - 1;
+      const overlayLines = stanzaData[currentLevel].lines;
+      showOverlay(overlayLines.join('<br/>'));
+      if (lastLevel) {
+        activeTool = null;
+        statusEl.innerHTML = 'Alle strofen vrij! <a href="#gedicht" id="status-link">Groeten - De Sint</a>';
+        const link = document.getElementById('status-link');
+        if (link) {
+          const go = () => {
+            const target = document.getElementById('gedicht');
+            if (!target) return;
+            const y = target.getBoundingClientRect().top + window.scrollY - 12;
+            window.scrollTo({ top: y, behavior: 'smooth' });
+          };
+          link.addEventListener('click', e => { e.preventDefault(); go(); });
+          link.addEventListener('touchstart', e => { e.preventDefault(); go(); }, { passive: false });
+        }
+        return;
+      }
+      currentLevel++;
+      activeTool = spawnTool();
+      statusEl.textContent = `Pak ${stanzaData[currentLevel].name} om strofe ${currentLevel+1} te openen`;
+    }
+
+    function handleInput() {
+      let dx = 0, dy = 0;
+      if (keys.has('ArrowLeft')) dx -= 1;
+      if (keys.has('ArrowRight')) dx += 1;
+      if (keys.has('ArrowUp')) dy -= 1;
+      if (keys.has('ArrowDown')) dy += 1;
+      if (dx || dy) {
+        const len = Math.hypot(dx, dy) || 1;
+        player.vx += (dx / len) * player.speed * 0.45;
+        player.vy += (dy / len) * player.speed * 0.45;
+      }
+    }
+
+    function update() {
+      if (overlayActive) return;
+      handleInput();
+
+      player.vx *= 0.92;
+      player.vy *= 0.92;
+      player.x += player.vx;
+      player.y += player.vy;
+      player.x = Math.max(player.size, Math.min(viewWidth - player.size, player.x));
+      player.y = Math.max(player.size, Math.min(viewHeight - player.size, player.y));
+
+      trail.push({ x: player.x, y: player.y, life: 1 });
+      if (trail.length > 60) trail.shift();
+
+      sawdust.forEach(s => {
+        s.phase += 0.03;
+        s.x += Math.sin(s.phase) * s.drift;
+        s.y += s.drift * 0.5;
+        if (s.y > viewHeight) s.y = -5;
+        if (s.x > viewWidth) s.x = -5;
+        if (s.x < -5) s.x = viewWidth + 5;
+      });
+
+      if (activeTool) {
+        activeTool.pulse += 0.08;
+        const dx = player.x - activeTool.x;
+        const dy = player.y - activeTool.y;
+        if (Math.hypot(dx, dy) < player.size + 16) {
+          unlockLevel();
+        }
+      }
+    }
+
+    function drawGrid() {
+      ctx.save();
+      ctx.strokeStyle = 'rgba(13,27,42,0.05)';
+      ctx.lineWidth = 1;
+      const spacing = 40;
+      for (let x = 0; x < viewWidth; x += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(x + 0.5, 0);
+        ctx.lineTo(x + 0.5, viewHeight);
+        ctx.stroke();
+      }
+      for (let y = 0; y < viewHeight; y += spacing) {
+        ctx.beginPath();
+        ctx.moveTo(0, y + 0.5);
+        ctx.lineTo(viewWidth, y + 0.5);
+        ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    function drawTrail() {
+      for (let i = 0; i < trail.length; i++) {
+        const t = trail[i];
+        const alpha = t.life;
+        ctx.fillStyle = `rgba(13,27,42,${0.12 * alpha})`;
+        ctx.beginPath();
+        ctx.arc(t.x, t.y, player.size * 0.45 * alpha, 0, Math.PI * 2);
+        ctx.fill();
+        t.life *= 0.96;
+      }
+    }
+
+    function drawPlayer() {
+      ctx.save();
+      ctx.translate(player.x, player.y);
+      ctx.rotate((player.vx + player.vy) * 0.02);
+      const px = 3;
+      const colors = {
+        hat: '#f7d546',
+        hair: '#f2c744',
+        skin: '#f7d7c4',
+        shirt: '#f28c28',
+        overalls: '#e36f11',
+        boots: '#5c3b1e',
+        belt: '#f9b233',
+        mustache: '#4a2b12',
+        outline: '#0d1b2a'
+      };
+      const dots = [
+        // Hat
+        [1,0,'hat'],[2,0,'hat'],[3,0,'hat'],[4,0,'hat'],[5,0,'hat'],[6,0,'hat'],
+        [0,1,'hat'],[1,1,'hat'],[2,1,'hat'],[3,1,'hat'],[4,1,'hat'],[5,1,'hat'],[6,1,'hat'],[7,1,'hat'],
+        [0,2,'hat'],[1,2,'hat'],[2,2,'hat'],[3,2,'hat'],[4,2,'hat'],[5,2,'hat'],[6,2,'hat'],[7,2,'hair'],
+        // Face + hair
+        [1,3,'hair'],[2,3,'skin'],[3,3,'skin'],[4,3,'skin'],[5,3,'skin'],[6,3,'hair'],
+        [1,4,'hair'],[2,4,'skin'],[3,4,'mustache'],[4,4,'mustache'],[5,4,'skin'],[6,4,'hair'],
+        [1,5,'hair'],[2,5,'skin'],[3,5,'skin'],[4,5,'skin'],[5,5,'skin'],[6,5,'hair'],
+        // Shirt + arms
+        [0,6,'shirt'],[1,6,'shirt'],[2,6,'shirt'],[3,6,'overalls'],[4,6,'overalls'],[5,6,'shirt'],[6,6,'shirt'],[7,6,'shirt'],
+        [0,7,'shirt'],[1,7,'shirt'],[2,7,'overalls'],[3,7,'overalls'],[4,7,'overalls'],[5,7,'overalls'],[6,7,'shirt'],[7,7,'shirt'],
+        [1,8,'overalls'],[2,8,'overalls'],[3,8,'belt'],[4,8,'belt'],[5,8,'overalls'],[6,8,'overalls'],
+        [1,9,'overalls'],[2,9,'overalls'],[3,9,'overalls'],[4,9,'overalls'],[5,9,'overalls'],[6,9,'overalls'],
+        // Boots
+        [2,10,'boots'],[3,10,'boots'],[4,10,'boots'],[5,10,'boots'],
+        [2,11,'boots'],[3,11,'boots'],[4,11,'boots'],[5,11,'boots']
+      ];
+      ctx.fillStyle = colors.outline;
+      ctx.fillRect(-4 * px, -6 * px, 8 * px, 12 * px);
+      for (const [x, y, c] of dots) {
+        ctx.fillStyle = colors[c] || colors.outline;
+        ctx.fillRect((x - 4) * px, (y - 6) * px, px, px);
+      }
+      ctx.restore();
+    }
+
+    function drawSawdust() {
+      ctx.save();
+      ctx.fillStyle = 'rgba(249,178,51,0.45)';
+      sawdust.forEach(s => {
+        ctx.beginPath();
+        ctx.arc(s.x, s.y, s.r, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.restore();
+    }
+
+    function drawTool() {
+      if (!activeTool) return;
+      const pulse = Math.sin(activeTool.pulse) * 6 + 20;
+      ctx.save();
+      ctx.translate(activeTool.x, activeTool.y);
+      ctx.fillStyle = `${activeTool.color}55`;
+      ctx.beginPath();
+      ctx.arc(0, 0, pulse + 8, 0, Math.PI * 2);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.beginPath();
+      ctx.arc(0, 0, pulse * 0.8 + 10, 0, Math.PI * 2);
+      ctx.fill();
+      const level = currentLevel;
+      ctx.save();
+      switch (level) {
+        case 0: drawDrill(); break;
+        case 1: drawScrew(); break;
+        case 2: drawPlank(); break;
+        case 3: drawDrawer(); break;
+        case 4: drawDumbbell(); break;
+        default: drawMedal(); break;
+      }
+      ctx.restore();
+      ctx.restore();
+    }
+
+    function drawDrill() {
+      ctx.fillStyle = stanzaData[0].color;
+      ctx.beginPath();
+      ctx.roundRect(-18, -9, 28, 18, 4);
+      ctx.fill();
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(-4, -6, 14, 12);
+      ctx.fillStyle = '#f9b233';
+      ctx.fillRect(-18, -4, 8, 8);
+      ctx.fillStyle = '#a7b7c6';
+      ctx.fillRect(10, -5, 10, 10);
+      ctx.fillStyle = '#d1d9e0';
+      ctx.beginPath();
+      ctx.moveTo(20, -5);
+      ctx.lineTo(28, 0);
+      ctx.lineTo(20, 5);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawScrew() {
+      ctx.fillStyle = '#b0c6d9';
+      ctx.fillRect(-4, -18, 8, 26);
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(-7, -18, 14, 6);
+      ctx.fillStyle = '#dbe5ef';
+      ctx.beginPath();
+      ctx.moveTo(-6, 8);
+      ctx.lineTo(0, 14);
+      ctx.lineTo(6, 8);
+      ctx.closePath();
+      ctx.fill();
+    }
+
+    function drawPlank() {
+      ctx.fillStyle = '#c48a4a';
+      ctx.fillRect(-26, -8, 52, 16);
+      ctx.fillStyle = '#a06f38';
+      ctx.fillRect(-26, -2, 52, 4);
+      ctx.fillStyle = '#0d1b2a44';
+      ctx.fillRect(-20, -6, 6, 12);
+      ctx.fillRect(8, -6, 6, 12);
+    }
+
+    function drawDrawer() {
+      ctx.fillStyle = '#e35b5d';
+      ctx.beginPath();
+      ctx.roundRect(-22, -14, 44, 28, 6);
+      ctx.fill();
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(-16, -2, 32, 4);
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(-4, -1, 8, 2);
+    }
+
+    function drawDumbbell() {
+      ctx.fillStyle = '#5d5dff';
+      ctx.fillRect(-22, -6, 12, 12);
+      ctx.fillRect(10, -6, 12, 12);
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(-10, -3, 20, 6);
+    }
+
+    function drawMedal() {
+      ctx.fillStyle = '#0d1b2a';
+      ctx.fillRect(-2, -14, 4, 28); // pole
+      ctx.fillStyle = '#0cbc87';
+      ctx.beginPath();
+      ctx.moveTo(2, -12);
+      ctx.lineTo(16, -7);
+      ctx.lineTo(2, -2);
+      ctx.closePath();
+      ctx.fill(); // flag
+      ctx.fillStyle = '#ffffff';
+      ctx.fillRect(6, -10, 6, 3);
+      ctx.fillRect(6, -5, 6, 3);
+    }
+
+    function frame() {
+      ctx.clearRect(0, 0, viewWidth, viewHeight);
+      drawGrid();
+      drawSawdust();
+      drawTrail();
+      drawTool();
+      drawPlayer();
+      update();
+      requestAnimationFrame(frame);
+    }
+
+    function resize() {
+      const rect = canvas.getBoundingClientRect();
+      viewWidth = rect.width;
+      viewHeight = rect.height;
+      canvas.width = rect.width * devicePixelRatio;
+      canvas.height = rect.height * devicePixelRatio;
+      ctx.setTransform(1, 0, 0, 1, 0, 0);
+      ctx.scale(devicePixelRatio, devicePixelRatio);
+      player.x = Math.min(Math.max(player.x || viewWidth / 2, player.size), viewWidth - player.size);
+      player.y = Math.min(Math.max(player.y || viewHeight / 2, player.size), viewHeight - player.size);
+    }
+
+    window.addEventListener('resize', resize);
+    resize();
+
+    const overlayBtn = document.getElementById('overlay-continue');
+
+    function showOverlay(text) {
+      overlayText.innerHTML = text;
+      overlayEl.classList.add('show');
+      overlayActive = true;
+    }
+
+    function hideOverlay() {
+      if (!overlayActive) return;
+      overlayEl.classList.remove('show');
+      overlayActive = false;
+    }
+
+    overlayBtn.addEventListener('click', hideOverlay);
+    overlayBtn.addEventListener('touchstart', (e) => { e.preventDefault(); hideOverlay(); }, { passive: false });
+
+    requestAnimationFrame(frame);
+  </script>
+</body>
+</html>
