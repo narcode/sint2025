@@ -401,7 +401,7 @@
     });
 
 
-    let activeTool = spawnTool();
+    let activeTool = null;
 
     function spawnTool() {
       const margin = 60;
@@ -427,6 +427,8 @@
       }
       return tool;
     }
+
+    activeTool = spawnTool();
 
     function unlockLevel() {
       const stanza = stanzaNodes[currentLevel];
